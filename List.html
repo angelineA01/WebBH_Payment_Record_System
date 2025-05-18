@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Personal Information List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #eef;
+      
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #aaa;
+            text-align: center;
+        }
+        th {
+            background-color: violet;
+        }
+        tr:nth-child(even) {
+            background-color: #c8e6c9;
+        }
+        tr:nth-child(odd) {
+            background-color: #e1bee7;
+        }
+        button {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .edit-btn { background-color: #2196F3; color: white; }
+        .delete-btn { background-color: #f44336; color: white; }
+        .save-btn { background-color: #4CAF50; color: white; }
+        .cancel-btn { background-color: #9E9E9E; color: white; }
+        .view-btn { background-color: orange; color: white; }
+
+        /* Align Room # input left */
+        .room-input {
+            text-align: center;
+        }
+           
+    </style>
+</head>
+<body>
+
+<center><h2>Personal Information</h2></center>
+<table>
+    <thead>
+        <tr>
+            <th>Room #</th> <!-- Moved Room # first -->
+            <th>Fullname</th>
+            <th>Age</th>
+            <th>Address</th>
+            <th>Sex</th>
+            <th>Birthdate</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="personListBody"></tbody>
+</table>
+
+<script>
+    const expectedMonthlyPayment = 750;
+    const months = ['January', 'February', 'March', 'April', 'May', 'June'];
+
+    let list = JSON.parse(localStorage.getItem('personList')) || [];
+
+    function saveList() {
+        localStorage.setItem('personList', JSON.stringify(list));
+    }
+
+    function renderList() {
+        const tbody = document.getElementById('personListBody');
+        tbody.innerHTML = '';
+
+        list.forEach((person, index) => {
+            if (!person.payments) {
+                person.payments = {};
+                months.forEach(month => person.payments[month] = 0);
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input class="room-input" type="text" value="${person.room || ''}" disabled></td>  <!-- Room # first, left aligned -->
+                <td><input type="text" value="${person.fullname}" disabled></td>
+                <td><input type="number" value="${person.age}" disabled></td>
+                <td><input type="text" value="${person.address}" disabled></td>
+                <td>
+                    <select disabled>
+                        <option ${person.sex === 'Male' ? 'selected' : ''}>Male</option>
+                        <option ${person.sex === 'Female' ? 'selected' : ''}>Female</option>
+                        <option ${person.sex === 'Other' ? 'selected' : ''}>Other</option>
+                    </select>
+                </td>
+                <td><input type="date" value="${person.birthdate}" disabled></td>
+                <td><input type="email" value="${person.email}" disabled></td>
+                <td><input type="tel" value="${person.phone}" disabled></td>
+                <td>
+                    <button class="edit-btn" onclick="editRow(this, ${index})">Edit</button>
+                    <button class="delete-btn" onclick="deleteRow(${index})">Delete</button>
+                    <a href="file:///C:/Users/Gwyneth/OneDrive/Desktop/Boarding%20House%20Payment%20Record/View%20Payment%20history.html"><button class="view payments" onclick="viewpayments(${index})">View Payments</button></a>                
+                </td> 
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function editRow(button, index) {
+        const row = button.closest('tr');
+        const inputs = row.querySelectorAll('input, select');
+        const isEditing = button.textContent === 'Save';
+
+        if (isEditing) {
+            // Now the inputs order is: room, fullname, age, address, sex, birthdate, email, phone
+            const [room, fullname, age, address, sex, birthdate, email, phone] = inputs;
+            list[index] = {
+                ...list[index],
+                room: room.value,
+                fullname: fullname.value,
+                age: age.value,
+                address: address.value,
+                sex: sex.value,
+                birthdate: birthdate.value,
+                email: email.value,
+                phone: phone.value
+            };
+            saveList();
+            renderList();
+        } else {
+            inputs.forEach(input => input.disabled = false);
+            button.textContent = 'Save';
+            button.className = 'save-btn';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.className = 'cancel-btn';
+            cancelBtn.onclick = () => renderList();
+            button.parentElement.appendChild(cancelBtn);
+        }
+    }
+
+    function deleteRow(index) {
+        if (confirm("Are you sure you want to delete this record?")) {
+            list.splice(index, 1);
+            saveList();
+            renderList();
+        }
+    }
+
+    function viewPayments(index) {
+        const person = list[index];
+        const payments = person.payments || {};
+        let totalPaid = 0;
+
+        let details = months.map(month => {
+            let paid = payments[month] || 0;
+            totalPaid += parseFloat(paid);
+            return `${month}: ₱${paid}`;
+        }).join('\n');
+
+        let balance = expectedMonthlyPayment * months.length - totalPaid;
+
+        alert(
+            `Payment History for ${person.fullname}:\n\n${details}\n\nTotal Paid: ₱${totalPaid}\nRemaining Balance: ₱${balance}`
+        );
+    }
+
+    renderList();
+</script>
+<P></p>
+<a href="file:///C:/Users/Gwyneth/OneDrive/Desktop/Boarding%20House%20Payment%20Record/Personal%20Information%20Form.html">
+    <button style="margin-bottom: 20px; padding: 10px 15px; background-color: #6a1b9a; color: white; border: none; border-radius: 5px;">
+        🡸Back to Form
+    </button>
+</a>
+
+<script>
+    // Redirect to login page if not logged in
+    if (localStorage.getItem("isLoggedIn") !== "true") {
+        window.location.href = "login.html";
+    }
+
+    function logout() {
+        localStorage.removeItem("isLoggedIn");
+        window.location.href = "login.html";
+    }
+</script>
+
+<!-- Logout button -->
+<button onclick="logout()" style="position: fixed; top: 20px; right: 20px; padding: 10px; background-color: #f44336; color: white; border: none; border-radius: 5px;">
+    Logout
+</button>
+
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Personal Information Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f3f3f3;
+            text-align: center;
+        }
+
+        form {
+            background-color: #ffffff;
+            padding: 50px;
+            border-radius: 20px;
+            width: 400px;
+            margin: 0 auto;
+            box-shadow: 1px 0px 10px #ccc;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 2px solid #aaa;
+            border-radius: 10px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .back-btn {
+            margin: 20px auto;
+            display: inline-block;
+            background-color: #6a1b9a;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 10px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Add Personal Information</h2>
+
+    <form onsubmit="saveData(event)">
+        <label for="fullname">Full Name:</label>
+        <input type="text" id="fullname" required>
+
+        <label for="age">Age:</label>
+        <input type="number" id="age" min="1" required>
+
+        <label for="address">Address:</label>
+        <textarea id="address" rows="3" required></textarea>
+
+        <label for="sex">Sex:</label>
+        <select id="sex" required>
+            <option value="">--Select--</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <label for="birthdate">Birthdate:</label>
+        <input type="date" id="birthdate" required>
+
+        <label for="email">Email Address:</label>
+        <input type="email" id="email">
+
+        <label for="phone">Phone Number:</label>
+        <input type="tel" id="phone">
+
+        <label for="room">Room #:</label>
+        <input type="text" id="room">
+
+        <center><button type="submit">Submit</button></center>            
+    </form>
+
+    <a href="list.html" class="back-btn">Back to Personal Information List🢂</a>
+
+    <script>
+        function saveData(event) {
+            event.preventDefault();
+            const person = {
+                fullname: document.getElementById('fullname').value,
+                age: document.getElementById('age').value,
+                address: document.getElementById('address').value,
+                sex: document.getElementById('sex').value,
+                birthdate: document.getElementById('birthdate').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                room: document.getElementById('room').value,
+            };
+
+            let list = JSON.parse(localStorage.getItem('personList')) || [];
+            list.push(person);
+            localStorage.setItem('personList', JSON.stringify(list));
+            window.location.href = 'list.html';
+        }
+    </script>
+<script>
+    // Redirect to login page if not logged in
+    if (localStorage.getItem("isLoggedIn") !== "true") {
+        window.location.href = "login.html";
+    }
+
+    function logout() {
+        localStorage.removeItem("isLoggedIn");
+        window.location.href = "login.html";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View Payment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f4f8;
+        }
+        h2 {
+            text-align: center;
+            color: #6a1b9a;
+        }
+        .card {
+            background: #fff;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #ba68c8;
+            color: white;
+        }
+        input[type="number"], input[type="datetime-local"] {
+            padding: 5px;
+            width: 100%;
+        }
+        .summary {
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .btn-save {
+            background-color: #6a1b9a;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        .back-btn {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #6a1b9a;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .not-included-btn {
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 0.85em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid #ba68c8;
+            background-color: #eee;
+            color: #555;
+            user-select: none;
+        }
+        .not-included-btn.active {
+            background-color: #ba68c8;
+            color: white;
+            border-color: #6a1b9a;
+        }
+    </style>
+</head>
+<body>
+
+<a href="list.html" class="back-btn">🡸 Back to List</a>
+<h2>View Payment History</h2>
+<div id="paymentListContainer"></div>
+
+<script>
+    const expectedMonthly = 750;
+    const months = ['January', 'February', 'March', 'April', 'May', 'June'];
+    const personList = JSON.parse(localStorage.getItem('personList')) || [];
+    const container = document.getElementById('paymentListContainer');
+
+    personList.forEach((person, personIndex) => {
+        if (!person.excludedMonths) person.excludedMonths = [];
+        if (!person.payments) {
+            person.payments = {};
+            months.forEach(month => person.payments[month] = 0);
+        }
+        if (!person.paymentDates) {
+            person.paymentDates = {};
+            months.forEach(month => person.paymentDates[month] = "");
+        }
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const note = document.createElement('div');
+        note.className = 'note';
+        note.textContent = 'Click "Not Included" button next to a month to exclude it from total and balance computations.';
+
+        const table = document.createElement('table');
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Amount Paid (₱)</th>
+                    <th>Date/Time</th>
+                    <th>Exclude</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${months.map(month => `
+                    <tr>
+                        <td>${month}</td>
+                        <td>
+                            <input 
+                                type="number" 
+                                min="0" 
+                                data-month="${month}" 
+                                data-person-index="${personIndex}" 
+                                value="${person.payments[month]}"
+                            >
+                        </td>
+                        <td>
+                            <input 
+                                type="datetime-local" 
+                                data-month="${month}" 
+                                data-person-index="${personIndex}" 
+                                value="${person.paymentDates[month] || ''}"
+                            >
+                        </td>
+                        <td>
+                            <button 
+                                class="not-included-btn ${person.excludedMonths.includes(month) ? 'active' : ''}" 
+                                data-month="${month}" 
+                                data-person-index="${personIndex}"
+                                type="button"
+                            >Not Included</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
+
+        const summary = document.createElement('div');
+        summary.className = 'summary';
+        summary.innerHTML = `
+            Total Paid: ₱<span class="total-paid">0.00</span><br>
+            Remaining Balance: ₱<span class="balance">0.00</span>
+        `;
+
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn-save';
+        saveBtn.textContent = 'Save Changes';
+        saveBtn.onclick = () => {
+            const amountInputs = card.querySelectorAll('input[type="number"]');
+            const dateInputs = card.querySelectorAll('input[type="datetime-local"]');
+
+            amountInputs.forEach(input => {
+                const month = input.dataset.month;
+                const amount = parseFloat(input.value) || 0;
+                person.payments[month] = amount;
+            });
+
+            dateInputs.forEach(input => {
+                const month = input.dataset.month;
+                const date = input.value;
+                person.paymentDates[month] = date;
+            });
+
+            personList[personIndex] = person;
+            localStorage.setItem('personList', JSON.stringify(personList));
+            updateSummary(card, person);
+            alert("Changes saved!");
+        };
+
+        card.innerHTML = `<h3>${person.fullname}</h3>`;
+        card.appendChild(note);
+        card.appendChild(table);
+        card.appendChild(summary);
+        card.appendChild(saveBtn);
+        container.appendChild(card);
+
+        // Listeners
+        card.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', () => updateSummary(card, person, true));
+        });
+
+        card.querySelectorAll('.not-included-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const month = button.dataset.month;
+                const idx = person.excludedMonths.indexOf(month);
+                if (idx === -1) {
+                    person.excludedMonths.push(month);
+                    button.classList.add('active');
+                } else {
+                    person.excludedMonths.splice(idx, 1);
+                    button.classList.remove('active');
+                }
+                updateSummary(card, person);
+            });
+        });
+
+        updateSummary(card, person);
+    });
+
+    function updateSummary(card, person, useInput = false) {
+        let totalPaid = 0;
+        const inputs = card.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            const month = input.dataset.month;
+            if (!person.excludedMonths.includes(month)) {
+                let value = useInput ? parseFloat(input.value) || 0 : person.payments[month] || 0;
+                totalPaid += value;
+            }
+        });
+        const includedMonthsCount = months.length - person.excludedMonths.length;
+        const balance = (expectedMonthly * includedMonthsCount - totalPaid).toFixed(2);
+
+        card.querySelector('.total-paid').textContent = totalPaid.toFixed(2);
+        card.querySelector('.balance').textContent = balance;
+    }
+</script>
+
+<!-- Logout Button -->
+<button onclick="logout()" style="position: fixed; top: 20px; right: 20px; padding: 10px; background-color: #f44336; color: white; border: none; border-radius: 5px;">
+    Logout
+</button>
+
+<script>
+function logout() {
+    alert("Logged out!");
+    window.location.href = 'file:///C:/Users/Gwyneth/OneDrive/Desktop/Boarding%20House%20Payment%20Record/login.html';
+}
+</script>
+
+</body>
+</html>
